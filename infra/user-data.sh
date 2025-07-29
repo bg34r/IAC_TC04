@@ -81,14 +81,7 @@ fi
 
 # Create .env file for the application
 echo "Creating .env file..." >> /var/log/deployment.log
-
-# Check if there's a .env file in the terraform directory (from GitHub Actions)
-if [ -f "/tmp/terraform-env" ]; then
-    echo "Using .env from terraform deployment" >> /var/log/deployment.log
-    cp /tmp/terraform-env /opt/microservico-api/.env
-else
-    echo "Creating .env with template variables" >> /var/log/deployment.log
-    cat > /opt/microservico-api/.env << EOF
+cat > /opt/microservico-api/.env << EOF
 APP_ENV=${APP_ENV}
 SERVER_ADDRESS=${SERVER_ADDRESS}
 PORT=${PORT}
@@ -106,13 +99,13 @@ REFRESH_TOKEN_EXPIRY_HOUR=${REFRESH_TOKEN_EXPIRY_HOUR}
 ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}
 REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
 EOF
-fi
 
 # Set proper permissions for .env
 chmod 600 /opt/microservico-api/.env
 chown ubuntu:ubuntu /opt/microservico-api/.env
 
 # Verify .env file was created
+echo ".env file created successfully" >> /var/log/deployment.log
 echo ".env file contents:" >> /var/log/deployment.log
 cat /opt/microservico-api/.env >> /var/log/deployment.log
 
