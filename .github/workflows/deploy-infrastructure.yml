@@ -94,7 +94,7 @@ jobs:
         fi
       env:
         TF_VAR_key_name: ${{ secrets.AWS_KEY_NAME }}
-        TF_VAR_security_group_name: "microservico-dev-sg"
+        TF_VAR_grupoDeSeguranca: "microservico-dev-sg"
         TF_VAR_environment: ${{ github.event.inputs.environment || 'dev' }}
     
     - name: Terraform Apply
@@ -109,7 +109,7 @@ jobs:
         fi
       env:
         TF_VAR_key_name: ${{ secrets.AWS_KEY_NAME }}
-        TF_VAR_security_group_name: "microservico-dev-sg"
+        TF_VAR_grupoDeSeguranca: "microservico-dev-sg"
         TF_VAR_environment: ${{ github.event.inputs.environment || 'dev' }}
     
     - name: Terraform Destroy
@@ -124,7 +124,7 @@ jobs:
         fi
       env:
         TF_VAR_key_name: ${{ secrets.AWS_KEY_NAME }}
-        TF_VAR_security_group_name: "microservico-dev-sg"
+        TF_VAR_grupoDeSeguranca: "microservico-dev-sg"
         TF_VAR_environment: ${{ github.event.inputs.environment || 'dev' }}
     
     - name: Output Results
@@ -132,4 +132,15 @@ jobs:
       run: |
         cd infra
         echo "## Terraform Outputs" >> $GITHUB_STEP_SUMMARY
-        terraform output -json | jq -r 'to_entries[] | "- **\(.key)**: \(.value.value)"' >> $GITHUB_STEP_SUMMARY
+        
+        # Check if there are any outputs before trying to parse
+        if terraform output -json > /dev/null 2>&1; then
+          OUTPUT=$(terraform output -json)
+          if [ "$OUTPUT" != "{}" ] && [ -n "$OUTPUT" ]; then
+            echo "$OUTPUT" | jq -r 'to_entries[] | "- **\(.key)**: \(.value.value)"' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No outputs available." >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "No outputs to display." >> $GITHUB_STEP_SUMMARY
+        fi

@@ -51,21 +51,35 @@ jobs:
     - name: Terraform Plan Destroy
       run: |
         cd infra
-        terraform plan -destroy -var-file="terraform.tfvars"
+        if [ -f "terraform.tfvars" ]; then
+          terraform plan -destroy -var-file="terraform.tfvars"
+        else
+          echo "terraform.tfvars not found, running plan destroy without var-file"
+          terraform plan -destroy
+        fi
       env:
         TF_VAR_key_name: ${{ secrets.AWS_KEY_NAME }}
+        TF_VAR_grupoDeSeguranca: "microservico-dev-sg"
     
     - name: Terraform Destroy
       run: |
         cd infra
-        terraform destroy -auto-approve -var-file="terraform.tfvars"
+        if [ -f "terraform.tfvars" ]; then
+          terraform destroy -auto-approve -var-file="terraform.tfvars"
+        else
+          echo "terraform.tfvars not found, running destroy without var-file"
+          terraform destroy -auto-approve
+        fi
       env:
         TF_VAR_key_name: ${{ secrets.AWS_KEY_NAME }}
+        TF_VAR_grupoDeSeguranca: "microservico-dev-sg"
     
     - name: Destruction Summary
       run: |
         echo "## 🗑️ Infrastructure Destruction Complete" >> $GITHUB_STEP_SUMMARY
         echo "Environment: **${{ github.event.inputs.environment }}**" >> $GITHUB_STEP_SUMMARY
         echo "Destroyed at: **$(date)**" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "All resources have been successfully destroyed." >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "All resources have been successfully destroyed." >> $GITHUB_STEP_SUMMARY

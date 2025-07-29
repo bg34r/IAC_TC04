@@ -1,5 +1,5 @@
 resource "aws_security_group" "acesso_geral" {
-  name        = var.grupoDeSeguranca
+  name        = var.security_group_name
 
   ingress {
     cidr_blocks = ["0.0.0.0/0"]
@@ -17,6 +17,7 @@ resource "aws_security_group" "acesso_geral" {
   }
   
   tags = {
-    Name = "Grupo de Seguranca Dev"
+    Name = "Microservico-Security-Group-${var.environment}"
+    Environment = var.environment
   }
 }
