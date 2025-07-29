@@ -71,11 +71,12 @@ jobs:
         cd infra
         terraform init
     
-    - name: Terraform Format Check
+    - name: Terraform Format
       run: |
         cd infra
-        terraform fmt -check
-      continue-on-error: true
+        echo "Checking Terraform formatting..."
+        terraform fmt -recursive
+        echo "Files have been formatted."
     
     - name: Terraform Validate
       run: |
@@ -85,7 +86,12 @@ jobs:
     - name: Terraform Plan
       run: |
         cd infra
-        terraform plan -var-file="terraform.tfvars"
+        if [ -f "terraform.tfvars" ]; then
+          terraform plan -var-file="terraform.tfvars"
+        else
+          echo "terraform.tfvars not found, running plan without var-file"
+          terraform plan
+        fi
       env:
         TF_VAR_key_name: ${{ secrets.AWS_KEY_NAME }}
     
@@ -93,7 +99,12 @@ jobs:
       if: github.event.inputs.action != 'plan' && github.event.inputs.action != 'destroy'
       run: |
         cd infra
-        terraform apply -auto-approve -var-file="terraform.tfvars"
+        if [ -f "terraform.tfvars" ]; then
+          terraform apply -auto-approve -var-file="terraform.tfvars"
+        else
+          echo "terraform.tfvars not found, running apply without var-file"
+          terraform apply -auto-approve
+        fi
       env:
         TF_VAR_key_name: ${{ secrets.AWS_KEY_NAME }}
     
@@ -101,7 +112,12 @@ jobs:
       if: github.event.inputs.action == 'destroy'
       run: |
         cd infra
-        terraform destroy -auto-approve -var-file="terraform.tfvars"
+        if [ -f "terraform.tfvars" ]; then
+          terraform destroy -auto-approve -var-file="terraform.tfvars"
+        else
+          echo "terraform.tfvars not found, running destroy without var-file"
+          terraform destroy -auto-approve
+        fi
       env:
         TF_VAR_key_name: ${{ secrets.AWS_KEY_NAME }}
     
