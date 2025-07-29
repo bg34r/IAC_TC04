@@ -1,5 +1,9 @@
+resource "random_id" "sg_suffix" {
+  byte_length = 4
+}
+
 resource "aws_security_group" "acesso_geral" {
-  name        = var.grupoDeSeguranca
+  name        = "${var.grupoDeSeguranca}-${random_id.sg_suffix.hex}"
 
   ingress {
     cidr_blocks = ["0.0.0.0/0"]
@@ -17,6 +21,7 @@ resource "aws_security_group" "acesso_geral" {
   }
   
   tags = {
-    Name = "Grupo de Seguranca Dev"
+    Name = "Microservico-Security-Group-${var.environment}-${random_id.sg_suffix.hex}"
+    Environment = var.environment
   }
 }
