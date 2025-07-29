@@ -35,5 +35,5 @@ variable "environment" {
 variable "grupoDeSeguranca" {
   description = "Name of the security group"
   type        = string
-  default     = "Grupo de Segurança Dev"
+  default     = "Grupo de Seguranca Dev"
 }
