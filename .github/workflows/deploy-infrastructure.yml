@@ -108,7 +108,7 @@ jobs:
           terraform plan -var-file="terraform.tfvars"
         else
           echo "terraform.tfvars not found, running plan without var-file"
-          terraform plan
+          terraform plan -out
         fi
       env:
         TF_VAR_key_name: ${{ secrets.AWS_KEY_NAME }}
