@@ -34,6 +34,22 @@ resource "aws_instance" "app_server" {
   
   user_data = base64encode(templatefile("${path.module}/user-data.sh", {
     api_repo_url = var.api_repo_url
+    APP_ENV = var.app_env
+    SERVER_ADDRESS = var.server_address
+    PORT = var.port
+    CONTEXT_TIMEOUT = var.context_timeout
+    DB_HOST = var.db_host
+    DB_PORT = var.db_port
+    DB_USER = var.db_user
+    DB_PASS = var.db_pass
+    DB_NAME = var.db_name
+    PRODUTO_QUEUE_URL = var.produto_queue_url
+    CLIENTE_QUEUE_URL = var.cliente_queue_url
+    PEDIDO_QUEUE_URL = var.pedido_queue_url
+    ACCESS_TOKEN_EXPIRY_HOUR = var.access_token_expiry_hour
+    REFRESH_TOKEN_EXPIRY_HOUR = var.refresh_token_expiry_hour
+    ACCESS_TOKEN_SECRET = var.access_token_secret
+    REFRESH_TOKEN_SECRET = var.refresh_token_secret
   }))
 
   root_block_device {
