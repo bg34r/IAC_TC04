@@ -139,7 +139,7 @@ jobs:
     
     - name: Upload Plan Artifact
       if: github.event.inputs.action != 'destroy'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: terraform-plan-${{ github.event.inputs.environment || 'dev' }}
         path: infra/terraform.tfplan
@@ -183,12 +183,12 @@ jobs:
     
     - name: Download Previous Plan (for destroy reference)
       if: github.event.inputs.action == 'destroy'
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       continue-on-error: true
       with:
         name: terraform-plan-${{ github.event.inputs.environment || 'dev' }}
         path: infra/
-    
+
     - name: Terraform Destroy
       if: github.event.inputs.action == 'destroy'
       run: |
