@@ -1,0 +1,113 @@
+name: Deploy Microservico API
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - prod
+      action:
+        description: 'Terraform action'
+        required: true
+        default: 'apply'
+        type: choice
+        options:
+        - plan
+        - apply
+        - destroy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.5.0
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+    
+    - name: Update user-data script with environment variables
+      run: |
+        # Create a temporary file with environment variables replaced
+        envsubst < infra/user-data.sh > infra/user-data-with-env.sh
+        chmod +x infra/user-data-with-env.sh
+        mv infra/user-data-with-env.sh infra/user-data.sh
+      env:
+        APP_ENV: ${{ secrets.APP_ENV || 'development' }}
+        SERVER_ADDRESS: ${{ secrets.SERVER_ADDRESS || ':8080' }}
+        PORT: ${{ secrets.PORT || '8080' }}
+        CONTEXT_TIMEOUT: ${{ secrets.CONTEXT_TIMEOUT || '2' }}
+        DB_HOST: ${{ secrets.DB_HOST || 'localhost' }}
+        DB_PORT: ${{ secrets.DB_PORT || '3306' }}
+        DB_USER: ${{ secrets.DB_USER || 'root' }}
+        DB_PASS: ${{ secrets.DB_PASS || 'password' }}
+        DB_NAME: ${{ secrets.DB_NAME || 'lanchonete' }}
+        PRODUTO_QUEUE_URL: ${{ secrets.PRODUTO_QUEUE_URL || '' }}
+        CLIENTE_QUEUE_URL: ${{ secrets.CLIENTE_QUEUE_URL || '' }}
+        PEDIDO_QUEUE_URL: ${{ secrets.PEDIDO_QUEUE_URL || '' }}
+        ACCESS_TOKEN_EXPIRY_HOUR: ${{ secrets.ACCESS_TOKEN_EXPIRY_HOUR || '2' }}
+        REFRESH_TOKEN_EXPIRY_HOUR: ${{ secrets.REFRESH_TOKEN_EXPIRY_HOUR || '168' }}
+        ACCESS_TOKEN_SECRET: ${{ secrets.ACCESS_TOKEN_SECRET || 'access_token_secret' }}
+        REFRESH_TOKEN_SECRET: ${{ secrets.REFRESH_TOKEN_SECRET || 'refresh_token_secret' }}
+    
+    - name: Terraform Init
+      run: |
+        cd infra
+        terraform init
+    
+    - name: Terraform Format Check
+      run: |
+        cd infra
+        terraform fmt -check
+      continue-on-error: true
+    
+    - name: Terraform Validate
+      run: |
+        cd infra
+        terraform validate
+    
+    - name: Terraform Plan
+      run: |
+        cd infra
+        terraform plan -var-file="terraform.tfvars"
+      env:
+        TF_VAR_key_name: ${{ secrets.AWS_KEY_NAME }}
+    
+    - name: Terraform Apply
+      if: github.event.inputs.action != 'plan' && github.event.inputs.action != 'destroy'
+      run: |
+        cd infra
+        terraform apply -auto-approve -var-file="terraform.tfvars"
+      env:
+        TF_VAR_key_name: ${{ secrets.AWS_KEY_NAME }}
+    
+    - name: Terraform Destroy
+      if: github.event.inputs.action == 'destroy'
+      run: |
+        cd infra
+        terraform destroy -auto-approve -var-file="terraform.tfvars"
+      env:
+        TF_VAR_key_name: ${{ secrets.AWS_KEY_NAME }}
+    
+    - name: Output Results
+      if: github.event.inputs.action != 'destroy'
+      run: |
+        cd infra
+        echo "## Terraform Outputs" >> $GITHUB_STEP_SUMMARY
+        terraform output -json | jq -r 'to_entries[] | "- **\(.key)**: \(.value.value)"' >> $GITHUB_STEP_SUMMARY
