@@ -167,16 +167,42 @@ jobs:
       run: |
         cd infra
         echo "Starting infrastructure destruction..."
-        echo "Checking for existing resources..."
-        terraform show || echo "No state file found"
         
+        # Check terraform state
+        echo "Checking Terraform state..."
+        if [ -f "terraform.tfstate" ]; then
+          echo "State file exists"
+          terraform state list || echo "No resources in state"
+        else
+          echo "No terraform.tfstate file found"
+        fi
+        
+        # Check for remote state
+        echo "Checking for remote state..."
+        terraform state list 2>/dev/null || echo "No remote state or no resources"
+        
+        # Show current workspace
+        echo "Current workspace: $(terraform workspace show)"
+        
+        # Run destroy with detailed output
+        echo "Running terraform destroy..."
         if [ -f "terraform.tfvars" ]; then
-          terraform destroy -auto-approve -var-file="terraform.tfvars"
+          terraform destroy -auto-approve -var-file="terraform.tfvars" -detailed-exitcode
         else
           echo "terraform.tfvars not found, running destroy without var-file"
-          terraform destroy -auto-approve
+          terraform destroy -auto-approve -detailed-exitcode
         fi
-        echo "Infrastructure destruction completed"
+        
+        DESTROY_EXIT_CODE=$?
+        echo "Destroy exit code: $DESTROY_EXIT_CODE"
+        
+        if [ $DESTROY_EXIT_CODE -eq 0 ]; then
+          echo "Resources were destroyed successfully"
+        elif [ $DESTROY_EXIT_CODE -eq 2 ]; then
+          echo "Resources were destroyed with changes"
+        else
+          echo "Destroy may have failed or no resources to destroy"
+        fi
       env:
         TF_VAR_key_name: ${{ secrets.AWS_KEY_NAME }}
         TF_VAR_grupoDeSeguranca: "microservico-sg"

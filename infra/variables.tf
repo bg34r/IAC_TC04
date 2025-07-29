@@ -38,7 +38,7 @@ variable "instance_type" {
 variable "api_repo_url" {
   description = "API repository URL"
   type        = string
-  default     = "https://github.com/your-username/your-repo.git"
+  default     = "https://github.com/bg34r/api_microservico.git"
 }
 
 # Application Environment Variables
