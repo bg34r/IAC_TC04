@@ -43,6 +43,7 @@ jobs:
         aws-region: ${{ secrets.AWS_REGION }}
     
     - name: Create environment file
+      if: github.event.inputs.action != 'destroy'
       run: |
         cd infra
         echo "Creating .env file with application configuration..."
@@ -165,33 +166,23 @@ jobs:
       if: github.event.inputs.action == 'destroy'
       run: |
         cd infra
+        echo "Starting infrastructure destruction..."
+        echo "Checking for existing resources..."
+        terraform show || echo "No state file found"
+        
         if [ -f "terraform.tfvars" ]; then
           terraform destroy -auto-approve -var-file="terraform.tfvars"
         else
           echo "terraform.tfvars not found, running destroy without var-file"
           terraform destroy -auto-approve
         fi
+        echo "Infrastructure destruction completed"
       env:
         TF_VAR_key_name: ${{ secrets.AWS_KEY_NAME }}
-        TF_VAR_grupoDeSeguranca: "microservico-dev-sg"
+        TF_VAR_grupoDeSeguranca: "microservico-sg"
         TF_VAR_environment: ${{ github.event.inputs.environment || 'dev' }}
-        TF_VAR_app_env: ${{ secrets.APP_ENV }}
-        TF_VAR_server_address: ${{ secrets.SERVER_ADDRESS }}
-        TF_VAR_port: ${{ secrets.PORT }}
-        TF_VAR_context_timeout: ${{ secrets.CONTEXT_TIMEOUT }}
-        TF_VAR_db_host: ${{ secrets.DB_HOST }}
-        TF_VAR_db_port: ${{ secrets.DB_PORT }}
-        TF_VAR_db_user: ${{ secrets.DB_USER }}
-        TF_VAR_db_pass: ${{ secrets.DB_PASS }}
-        TF_VAR_db_name: ${{ secrets.DB_NAME }}
-        TF_VAR_produto_queue_url: ${{ secrets.PRODUTO_QUEUE_URL }}
-        TF_VAR_cliente_queue_url: ${{ secrets.CLIENTE_QUEUE_URL }}
-        TF_VAR_pedido_queue_url: ${{ secrets.PEDIDO_QUEUE_URL }}
-        TF_VAR_access_token_expiry_hour: ${{ secrets.ACCESS_TOKEN_EXPIRY_HOUR }}
-        TF_VAR_refresh_token_expiry_hour: ${{ secrets.REFRESH_TOKEN_EXPIRY_HOUR }}
-        TF_VAR_access_token_secret: ${{ secrets.ACCESS_TOKEN_SECRET }}
-        TF_VAR_refresh_token_secret: ${{ secrets.REFRESH_TOKEN_SECRET }}
-    
+        TF_VAR_api_repo_url: "https://github.com/bg34r/IAC_TC04.git"
+
     - name: Output Results
       if: github.event.inputs.action != 'destroy'
       run: |
@@ -212,3 +203,15 @@ jobs:
         echo "- **Environment**: ${{ github.event.inputs.environment || 'dev' }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Deployed at**: $(date)" >> $GITHUB_STEP_SUMMARY
         echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+    
+    - name: Destroy Summary
+      if: github.event.inputs.action == 'destroy'
+      run: |
+        echo "## 🗑️ Infrastructure Destruction Complete" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Destruction Details:" >> $GITHUB_STEP_SUMMARY
+        echo "- **Environment**: ${{ github.event.inputs.environment || 'dev' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Destroyed at**: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ All resources have been successfully destroyed." >> $GITHUB_STEP_SUMMARY
