@@ -17,6 +17,6 @@ resource "aws_security_group" "acesso_geral" {
   }
   
   tags = {
-    Name = "Grupo de Segurança Dev"
+    Name = "Grupo de Seguranca Dev"
   }
 }
