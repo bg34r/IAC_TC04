@@ -18,15 +18,15 @@ apt-get install -y mysql-server
 systemctl start mysql
 systemctl enable mysql
 
-# Secure MySQL installation (basic setup)
-mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${DB_PASS}';"
+# Secure MySQL installation (basic setup) - usando a senha do .env
+mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'password';"
 mysql -e "DELETE FROM mysql.user WHERE User='';"
 mysql -e "DROP DATABASE IF EXISTS test;"
 mysql -e "FLUSH PRIVILEGES;"
 
 # Create database for the application - usando as configurações do .env
-mysql -u root -p${DB_PASS} -e "CREATE DATABASE IF NOT EXISTS lanchonete;"
-mysql -u root -p${DB_PASS} -e "FLUSH PRIVILEGES;"
+mysql -u root -ppassword -e "CREATE DATABASE IF NOT EXISTS lanchonete;"
+mysql -u root -ppassword -e "FLUSH PRIVILEGES;"
 
 # Install Go
 GO_VERSION="1.22.0"
@@ -103,11 +103,6 @@ EOF
 # Set proper permissions for .env
 chmod 600 /opt/microservico-api/.env
 chown ubuntu:ubuntu /opt/microservico-api/.env
-
-# Verify .env file was created
-echo ".env file created successfully" >> /var/log/deployment.log
-echo ".env file contents:" >> /var/log/deployment.log
-cat /opt/microservico-api/.env >> /var/log/deployment.log
 
 # Build the application com todas as variáveis de ambiente
 echo "Building application..." >> /var/log/deployment.log
@@ -191,7 +186,7 @@ systemctl is-active mysql >> /var/log/deployment.log
 systemctl is-active microservico-api >> /var/log/deployment.log
 
 # Test database connection com as credenciais corretas
-mysql -u root -p${DB_PASS} -e "SELECT 1;" >> /var/log/deployment.log 2>&1
+mysql -u root -ppassword -e "SELECT 1;" >> /var/log/deployment.log 2>&1
 
 # Test application
 echo "Testing application:" >> /var/log/deployment.log
