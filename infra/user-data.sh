@@ -83,7 +83,7 @@ fi
 echo "Creating .env file..." >> /var/log/deployment.log
 cat > /opt/microservico-api/.env << EOF
 APP_ENV=${APP_ENV}
-SERVER_ADDRESS=0.0.0.0:${PORT}
+SERVER_ADDRESS=${PORT}
 PORT=${PORT}
 CONTEXT_TIMEOUT=${CONTEXT_TIMEOUT}
 DB_HOST=${DB_HOST}
@@ -115,6 +115,16 @@ chmod -R 755 /home/ubuntu/go
 
 # Build as ubuntu user to avoid permission issues
 echo "Building as ubuntu user..." >> /var/log/deployment.log
+
+# Remove old cache to avoid permission issues
+rm -rf /home/ubuntu/go/cache/* 2>/dev/null || true
+rm -rf /home/ubuntu/go/pkg/mod/cache/* 2>/dev/null || true
+
+# Fix all permissions recursively
+chown -R ubuntu:ubuntu /home/ubuntu/go
+chown -R ubuntu:ubuntu /opt/microservico-api
+chmod -R 755 /home/ubuntu/go
+
 sudo -u ubuntu bash -c '
     export HOME=/home/ubuntu
     export GOPATH=/home/ubuntu/go
@@ -122,6 +132,9 @@ sudo -u ubuntu bash -c '
     export GOCACHE=/home/ubuntu/go/cache
     export PATH=$PATH:/usr/local/go/bin
     cd /opt/microservico-api
+    
+    # Clean any existing builds
+    rm -f microservico-api
     
     # Download dependencies
     /usr/local/go/bin/go mod download >> /var/log/deployment.log 2>&1
@@ -179,11 +192,19 @@ EOF
 systemctl daemon-reload
 systemctl enable microservico-api
 
+# Stop any existing service first
+systemctl stop microservico-api 2>/dev/null || true
+
 # Try to start the service and capture detailed logs
 echo "Starting microservico-api service..." >> /var/log/deployment.log
 systemctl start microservico-api
 
 # Wait longer for service to start
+sleep 15
+
+# Force restart to ensure .env changes are loaded
+echo "Restarting service to load .env changes..." >> /var/log/deployment.log
+systemctl restart microservico-api
 sleep 10
 
 # Check service status immediately
