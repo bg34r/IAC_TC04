@@ -19,17 +19,17 @@ systemctl start mysql
 systemctl enable mysql
 
 # Secure MySQL installation (basic setup) - usando a senha do .env
-mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'password';"
+mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${DB_PASS}';"
 mysql -e "DELETE FROM mysql.user WHERE User='';"
 mysql -e "DROP DATABASE IF EXISTS test;"
 mysql -e "FLUSH PRIVILEGES;"
 
 # Create database for the application - usando as configurações do .env
-mysql -u root -ppassword -e "CREATE DATABASE IF NOT EXISTS lanchonete;"
-mysql -u root -ppassword -e "FLUSH PRIVILEGES;"
+mysql -u root -p${DB_PASS} -e "CREATE DATABASE IF NOT EXISTS ${DB_NAME};"
+mysql -u root -p${DB_PASS} -e "FLUSH PRIVILEGES;"
 
 # Install Go
-GO_VERSION="1.22.0"
+GO_VERSION="1.23.4"
 wget https://go.dev/dl/go$GO_VERSION.linux-amd64.tar.gz
 rm -rf /usr/local/go && tar -C /usr/local -xzf go$GO_VERSION.linux-amd64.tar.gz
 
