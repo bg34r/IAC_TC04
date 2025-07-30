@@ -13,7 +13,7 @@ variable "key_name" {
 variable "grupoDeSeguranca" {
   description = "Security group name"
   type        = string
-  default     = "microservico-dev-sg"
+  default     = "acesso_geral"
 }
 
 # Project Configuration
